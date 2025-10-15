@@ -1,0 +1,17 @@
+---
+- hosts: webservers
+  become: true
+  tasks:
+    - name: Update Repository Index
+      apt:
+        update_cache: yes
+
+    - name: Remove Apache2 Package
+      apt:
+        name: apache2
+        state: absent
+
+    - name: Remove PHP support for Apache2
+      apt:
+        name: libapache2-mod-php
+        state: absent
