@@ -1,0 +1,40 @@
+- name: Deploy one stack (tag + compose apply)
+  hosts: "{{ docker }}"
+  become: true
+  vars:
+    root_dir: "/opt/stack"
+    stack_name: "{{ stack_name }}"
+    env_key: "{{ env_key }}"
+    app_tag: "{{ app_tag }}"
+    stack_dir: "{{ root_dir }}/{{ stack_name }}"
+    env_file: "{{ stack_dir }}/.env"
+
+  tasks:
+    - name: Ensure stack directory exists
+      file:
+        path: "{{ stack_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Ensure .env exists
+      file:
+        path: "{{ env_file }}"
+        state: touch
+        mode: "0640"
+
+    - name: Set tag in stack .env
+      lineinfile:
+        path: "{{ env_file }}"
+        regexp: "^{{ env_key }}="
+        line: "{{ env_key }}={{ app_tag }}"
+        create: true
+
+    - name: Pull updated images (root compose, includes stacks)
+      command: docker compose pull
+      args:
+        chdir: "{{ root_dir }}"
+
+    - name: Apply compose
+      command: docker compose up -d
+      args:
+        chdir: "{{ root_dir }}"

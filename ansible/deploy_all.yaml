@@ -1,0 +1,37 @@
+- name: Deploy all stacks (sync compose + apply root)
+  hosts: "{{ target_group }}"
+  become: true
+  vars:
+    root_dir: "/opt/docker"
+    local_root_compose: "runtime/docker-compose.yaml" # from repo
+    local_stacks_dir: "stacks" # from repo
+
+  tasks:
+    - name: Ensure root dir exists
+      file:
+        path: "{{ root_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy root compose (include file)
+      copy:
+        src: "{{ local_root_compose }}"
+        dest: "{{ root_dir }}/docker-compose.yaml"
+        mode: "0644"
+
+    - name: Sync stacks folder (compose files, templates, etc.)
+      synchronize:
+        src: "{{ local_stacks_dir }}/"
+        dest: "{{ root_dir }}/"
+        recursive: yes
+        delete: no
+
+    - name: Pull images
+      command: docker compose pull
+      args:
+        chdir: "{{ root_dir }}"
+
+    - name: Apply compose
+      command: docker compose up -d
+      args:
+        chdir: "{{ root_dir }}"
