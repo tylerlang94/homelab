@@ -1,0 +1,51 @@
+name: deploy-stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Environment to deploy: internal or external"
+        required: true
+        default: "internal"
+      stack_name:
+        description: "Stack folder name under /opt/docker (e.g., media, monitoring)"
+        required: true
+      env_key:
+        description: "Env var key inside /opt/docker/<stack>/.env (e.g., GITEA_TAG or APP_TAG)"
+        required: true
+      app_tag:
+        description: "Value to set for env_key (e.g., sha-abc1234 or 1.22.4)"
+        required: true
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy stack via Ansible
+        working-directory: ansible
+        run: |
+          set -euo pipefail
+
+          case "${{ inputs.target }}" in
+            internal)
+              INVENTORY="inventories/internal/hosts.ini"
+              TARGET_GROUP="dockerhosts_internal"
+              ;;
+            external)
+              INVENTORY="inventories/external/hosts.ini"
+              TARGET_GROUP="dockerhosts_external"
+              ;;
+            *)
+              echo "Invalid target: ${{ inputs.target }} (must be internal or external)"
+              exit 1
+              ;;
+          esac
+
+          ansible-playbook -i "$INVENTORY" playbooks/deploy_stack.yml \
+            -e "target_group=$TARGET_GROUP" \
+            -e "stack_name=${{ inputs.stack_name }}" \
+            -e "env_key=${{ inputs.env_key }}" \
+            -e "app_tag=${{ inputs.app_tag }}"

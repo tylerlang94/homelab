@@ -1,0 +1,40 @@
+name: deploy-all
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "ansible/**"
+      - "docker/**"
+      - ".gitea/workflows/**"
+
+jobs:
+  internal:
+    name: Deploy all (internal)
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy all to internal docker hosts
+        working-directory: ansible
+        run: |
+          set -euo pipefail
+          ansible-playbook -i inventories/internal/hosts.ini playbooks/deploy_all.yml \
+            -e "target_group=dockerhosts_internal"
+
+  external:
+    name: Deploy all (external)
+    runs-on: self-hosted
+    # Uncomment this job once you're ready to auto-deploy external changes too
+    if: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy all to external docker hosts
+        working-directory: ansible
+        run: |
+          set -euo pipefail
+          ansible-playbook -i inventories/external/hosts.ini playbooks/deploy_all.yml \
+            -e "target_group=dockerhosts_external"

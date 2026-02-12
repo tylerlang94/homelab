@@ -1,0 +1,19 @@
+name: test-ansible
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ping-internal:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test internal inventory connectivity
+        working-directory: ansible
+        run: |
+          set -euo pipefail
+          ansible -i inventories/internal/inventory.ini \
+            dockerhosts_internal \
+            -m ping
