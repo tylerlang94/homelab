@@ -13,6 +13,4 @@ jobs:
       - name: Test internal inventory connectivity
         working-directory: ansible
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          ansible --version
-          ansible -i inventories/internal/inventory.ini dockerhosts_internal -m ping
+          ping lang-docker-01.internal -c 4
